@@ -8,6 +8,61 @@ from TagsTrain import TagsTrain
 import csv
 import sys
 
+def bayesianARDRegression(X_train, Y_train, X_validation):
+
+    bayesianARDRegression = linear_model.ARDRegression()
+    bayesianARDRegression.fit(X_train, Y_train)
+    predictions = bayesianARDRegression().predict(X_validation)
+
+    bayesianARDRegressionOutputFile = open('bayesianARDRegresionOutput.txt', 'w')
+    bayesianARDRegressionOutputFile.write('tag_id, click_count' + '\n')
+    index = 0
+
+    for prediction in predictions:
+        bayesianARDRegressionOutputFile.write(str(tags[index].tag_id) + ', ' +  str(prediction) + '\n')
+        index += 1
+
+def linearRegression(X_train, Y_train, X_validation):
+
+    lmlinearRegression = linear_model.LinearRegression()
+    lmlinearRegression.fit(X_train, Y_train)
+    predictions = lmlinearRegression.predict(X_validation)
+
+    lmlinearRegressionOutputFile = open('lmlinearRegresionOutput.txt', 'w')
+    lmlinearRegressionOutputFile.write('tag_id, click_count' + '\n')
+    index = 0
+
+    for prediction in predictions:
+        lmlinearRegressionOutputFile.write(str(tags[index].tag_id) + ', ' +  str(prediction) + '\n')
+        index += 1
+
+def logisticRegression(X_train, Y_train, X_validation):
+    lmlr = linear_model.LogisticRegression()
+    lmlr.fit(X_train, Y_train)
+    predictions = lmlr.predict(X_validation)
+
+    lmlrOutputFile = open('lmlrOutput.txt', 'w')
+    lmlrOutputFile.write('tag_id, click_count' + '\n')
+    index = 0
+
+    for prediction in predictions:
+        lmlrOutputFile.write(str(tags[index].tag_id) + ', ' +  str(prediction) + '\n')
+        index += 1
+
+def kNeighbors(X_train, Y_train, X_validation):
+
+    knr = KNeighborsClassifier()
+    knr.fit(X_train, Y_train)
+    predictions = knr.predict(X_validation)
+
+    knrOutputFile = open('knrOutput.txt', 'w')
+    knrOutputFile.write('tag_id, click_count' + '\n')
+    index = 0
+
+    for prediction in predictions:
+        knrOutputFile.write(str(tags[index].tag_id) + ', ' +  str(prediction) + '\n')
+        index += 1
+
 reload(sys)
 sys.setdefaultencoding('UTF8')
 
@@ -50,27 +105,9 @@ for tag in tags:
     vectorColumn = [dateNumber, int(tag.color)]
     X_validation.append(vectorColumn)
 
-lmlr = linear_model.LogisticRegression()
-lmlr.fit(X_train, Y_train)
-predictions = lmlr.predict(X_validation)
+#linearRegression(X_train, Y_train, X_validation)
+bayesianARDRegression(X_train, Y_train, X_validation)
 
-lmlrOutputFile = open('lmlrOutput.txt', 'w')
-lmlrOutputFile.write('tag_id, click_count' + '\n')
-index = 0
-
-for prediction in predictions:
-    lmlrOutputFile.write(str(tags[0].tag_id) + ', ' +  str(prediction) + '\n')
-
-'''knr = KNeighborsClassifier()
-knr.fit(X_train, Y_train)
-predictions = knr.predict(X_validation)
-
-knrOutputFile = open('knrOutput.txt', 'w')
-knrOutputFile.write('tag_id, click_count' + '\n')
-index = 0
-
-for prediction in predictions:
-    knrOutputFile.write(str(tags[0].tag_id) + ', ' +  str(prediction) + '\n')'''
 
 
 
