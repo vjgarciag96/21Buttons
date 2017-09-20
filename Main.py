@@ -1,6 +1,7 @@
 #!/usr/bin/python
 #-*- coding: utf-8 -*-
 from sklearn import linear_model
+from sklearn import gaussian_process
 from sklearn import model_selection
 from sklearn.neighbors import KNeighborsClassifier
 from datetime import datetime
@@ -22,12 +23,56 @@ def parseUsers():
     print "...users parsed..."
     return users
 
+#--------------gaussian models---------------------------#
+def gaussianProcessClassifier(X_train, Y_train, X_validation):
+    gaussianProcessClassifier = gaussian_process.GaussianProcessClassifier()
+    gaussianProcessClassifier.fit(X_train, Y_train)
+    predictions = gaussianProcessClassifier.predict(X_validation)
+
+    gaussianProcessClassifierOutputFile = open('gaussianProcessClassifierOutput.txt', 'w')
+    gaussianProcessClassifierOutputFile.write('tag_id, click_count' + '\n')
+    index = 0
+
+    for prediction in predictions:
+        gaussianProcessClassifierOutputFile.write(str(tags[index].tag_id) + ', ' +  str(prediction) + '\n')
+        index += 1
+
+
+#---------------end of gaussian models------------------#
+
+#---------------linear models---------------------------
+def ortogonalMP(X_train, Y_train, X_validation):
+    ortogonalMP = linear_model.OrthogonalMatchingPursuit()
+    ortogonalMP.fit(X_train, Y_train)
+    predictions = ortogonalMP.predict(X_validation)
+
+    ortogonalMPOutputFile = open('ortogonalMPOutput.txt', 'w')
+    ortogonalMPOutputFile.write('tag_id, click_count' + '\n')
+    index = 0
+
+    for prediction in predictions:
+        ortogonalMPOutputFile.write(str(tags[index].tag_id) + ', ' +  str(prediction) + '\n')
+        index += 1
+
+def passiveAggressiveClassifier(X_train, Y_train, X_validation):
+    passiveAggressiveClassifier = linear_model.PassiveAggressiveClassifier()
+    passiveAggressiveClassifier.fit(X_train, Y_train)
+    predictions = passiveAggressiveClassifier.predict(X_validation)
+
+    passiveAggressiveClassifierOutputFile = open('passiveAggressiveClassifierOutput.txt', 'w')
+    passiveAggressiveClassifierOutputFile.write('tag_id, click_count' + '\n')
+    index = 0
+
+    for prediction in predictions:
+        passiveAggressiveClassifierOutputFile.write(str(tags[index].tag_id) + ', ' +  str(prediction) + '\n')
+        index += 1
+
 #WARNING: this method throws Memory Error
 def bayesianRidgeRegression(X_train, Y_train, X_validation):
 
     bayesianRidgeRegression = linear_model.ARDRegression()
     bayesianRidgeRegression.fit(X_train, Y_train)
-    predictions = bayesianRidgeRegression().predict(X_validation)
+    predictions = bayesianRidgeRegression.predict(X_validation)
 
     bayesianRidgeRegressionOutputFile = open('bayesianRidgeRegresionOutput.txt', 'w')
     bayesianRidgeRegressionOutputFile.write('tag_id, click_count' + '\n')
@@ -42,7 +87,7 @@ def bayesianARDRegression(X_train, Y_train, X_validation):
 
     bayesianARDRegression = linear_model.ARDRegression()
     bayesianARDRegression.fit(X_train, Y_train)
-    predictions = bayesianARDRegression().predict(X_validation)
+    predictions = bayesianARDRegression.predict(X_validation)
 
     bayesianARDRegressionOutputFile = open('bayesianARDRegresionOutput.txt', 'w')
     bayesianARDRegressionOutputFile.write('tag_id, click_count' + '\n')
@@ -63,7 +108,7 @@ def linearRegression(X_train, Y_train, X_validation, Y_validation):
     index = 0
 
     for prediction in predictions:
-        lmlinearRegressionOutputFile.write(str(tags[index].tag_id) + ', ' +  str(prediction) + '\n')
+        lmlinearRegressionOutputFile.write(str(tags[index].tag_id) + ', ' +  str(int(prediction)) + '\n')
         index += 1
 
 def logisticRegression(X_train, Y_train, X_validation):
@@ -92,6 +137,7 @@ def kNeighbors(X_train, Y_train, X_validation):
     for prediction in predictions:
         knrOutputFile.write(str(tags[index].tag_id) + ', ' +  str(prediction) + '\n')
         index += 1
+#--------------End of linear models----------------------------#
 
 reload(sys)
 sys.setdefaultencoding('UTF8')
@@ -154,10 +200,12 @@ for tag in tags:
     vectorColumn = [dateNumber, int(tag.color), tag.isIT, tag.isSP, tag.isGB]
     X_validation.append(vectorColumn)
 
-linearRegression(X_train, Y_train, X_validation, Y_validation)
+#passiveAggressiveClassifier(X_train, Y_train, X_validation)
+#linearRegression(X_train, Y_train, X_validation)
 #bayesianARDRegression(X_train, Y_train, X_validation)
 #bayesianRidgeRegression(X_train, Y_train, X_validation)
-
+#ortogonalMP(X_train, Y_train, X_validation)
+gaussianProcessClassifier(X_train, Y_train, X_validation)
 
 
 
