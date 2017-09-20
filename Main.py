@@ -50,11 +50,18 @@ for tag in tags:
     vectorColumn = [dateNumber, int(tag.color)]
     X_validation.append(vectorColumn)
 
-#lmlr = linear_model.LogisticRegression()
-#lmlr.fit(X_train, Y_train)
-#predictions = lmlr.predict(X_validation)
+lmlr = linear_model.LogisticRegression()
+lmlr.fit(X_train, Y_train)
+predictions = lmlr.predict(X_validation)
 
-knr = KNeighborsClassifier()
+lmlrOutputFile = open('lmlrOutput.txt', 'w')
+lmlrOutputFile.write('tag_id, click_count' + '\n')
+index = 0
+
+for prediction in predictions:
+    lmlrOutputFile.write(str(tags[0].tag_id) + ', ' +  str(prediction) + '\n')
+
+'''knr = KNeighborsClassifier()
 knr.fit(X_train, Y_train)
 predictions = knr.predict(X_validation)
 
@@ -63,7 +70,7 @@ knrOutputFile.write('tag_id, click_count' + '\n')
 index = 0
 
 for prediction in predictions:
-    knrOutputFile.write(str(tags[0].tag_id) + ', ' +  str(prediction) + '\n')
+    knrOutputFile.write(str(tags[0].tag_id) + ', ' +  str(prediction) + '\n')'''
 
 
 
