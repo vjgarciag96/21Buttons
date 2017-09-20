@@ -3,6 +3,9 @@
 from sklearn import linear_model
 from sklearn import gaussian_process
 from sklearn import model_selection
+from sklearn import naive_bayes
+from sklearn import neural_network
+from sklearn.pipeline import Pipeline
 from sklearn.neighbors import KNeighborsClassifier
 from datetime import datetime
 from TagsTrain import TagsTrain
@@ -23,7 +26,50 @@ def parseUsers():
     print "...users parsed..."
     return users
 
+def bernouilliRBM(X_train, Y_train, X_validation):
+
+    logistic = linear_model.LogisticRegression()
+
+    bernouilliRBM = neural_network.BernoulliRBM(random_state=0, verbose=True)
+
+    classifier = Pipeline(steps=[('rbm', bernouilliRBM), ('logistic', logistic)])
+
+    bernouilliRBM.learning_rate = 0.06
+    bernouilliRBM.n_iter = 20
+
+    bernouilliRBM.n_components = 100
+    logistic.C = 6000.0
+
+    classifier.fit(X_train, Y_train)
+
+    logistic_classifier = linear_model.LogisticRegression(C=100.0)
+    logistic_classifier.fit(X_train, Y_train)
+    predictions = classifier.predict(X_validation)
+
+    bernouilliRBMOutputFile = open('bernouilliRBMOutput.txt', 'w')
+    bernouilliRBMOutputFile.write('tag_id, click_count' + '\n')
+    index = 0
+
+    for prediction in predictions:
+        bernouilliRBMOutputFile.write(str(tags[index].tag_id) + ', ' + str(prediction) + '\n')
+        index += 1
+
+def gaussianNB(X_train, Y_train, X_validation):
+    gaussianNB = naive_bayes.GaussianNB()
+    gaussianNB.fit(X_train, Y_train)
+    predictions = gaussianNB.predict(X_validation)
+
+    gaussianNBOutputFile = open('gaussianNBOutput.txt', 'w')
+    gaussianNBOutputFile.write('tag_id, click_count' + '\n')
+    index = 0
+
+    for prediction in predictions:
+        gaussianNBOutputFile.write(str(tags[index].tag_id) + ', ' +  str(prediction) + '\n')
+        index += 1
+
 #--------------gaussian models---------------------------#
+
+#WARNING. Throws memory error
 def gaussianProcessClassifier(X_train, Y_train, X_validation):
     gaussianProcessClassifier = gaussian_process.GaussianProcessClassifier()
     gaussianProcessClassifier.fit(X_train, Y_train)
@@ -205,7 +251,9 @@ for tag in tags:
 #bayesianARDRegression(X_train, Y_train, X_validation)
 #bayesianRidgeRegression(X_train, Y_train, X_validation)
 #ortogonalMP(X_train, Y_train, X_validation)
-gaussianProcessClassifier(X_train, Y_train, X_validation)
+#gaussianProcessClassifier(X_train, Y_train, X_validation)
+#gaussianNB(X_train, Y_train, X_validation)
+bernouilliRBM(X_train, Y_train, X_validation)
 
 
 
