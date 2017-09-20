@@ -50,7 +50,7 @@ def decisionTreeRegressor(X_train, Y_train, X_validation):
     index = 0
 
     for prediction in predictions:
-        decisionTreeOutputFile.write(str(tags[index].tag_id) + ', ' +  str(prediction) + '\n')
+        decisionTreeOutputFile.write(str(tags[index].tag_id) + ', ' +  str(int(prediction)) + '\n')
         index += 1
 
 def bernouilliRBM(X_train, Y_train, X_validation):
@@ -255,7 +255,8 @@ Y = []
 for tag in tags:
     datetime_formated = datetime.strptime(tag.date, '%Y-%m-%d')
     dateNumber = datetimeToNumber(datetime_formated)
-    vectorColumn = [dateNumber, int(tag.color), tag.isIT, tag.isSP, tag.isGB, tag.userDate]
+    vectorColumn = [dateNumber, tag.isColor0, tag.isColor1, tag.isColor2, tag.isColor3, tag.isColor4, tag.isColor5,
+                    tag.isIT, tag.isSP, tag.isGB, tag.userDate]
     X.append(vectorColumn)
     Y.append(tag.clicks)
 
@@ -285,7 +286,8 @@ for tag_row in tags_reader:
 for tag in tags:
     datetime_formated = datetime.strptime(tag.date, '%Y-%m-%d')
     dateNumber = datetimeToNumber(datetime_formated)
-    vectorColumn = [dateNumber, int(tag.color), tag.isIT, tag.isSP, tag.isGB, tag.userDate]
+    vectorColumn = [dateNumber, tag.isColor0, tag.isColor1, tag.isColor2, tag.isColor3, tag.isColor4, tag.isColor5,
+                    tag.isIT, tag.isSP, tag.isGB, tag.userDate]
     X_validation.append(vectorColumn)
 
 #passiveAggressiveClassifier(X_train, Y_train, X_validation)
@@ -294,9 +296,9 @@ for tag in tags:
 #bayesianRidgeRegression(X_train, Y_train, X_validation)
 #ortogonalMP(X_train, Y_train, X_validation)
 #gaussianProcessClassifier(X_train, Y_train, X_validation)
-gaussianNB(X_train, Y_train, X_validation)
+#gaussianNB(X_train, Y_train, X_validation)
 #bernouilliRBM(X_train, Y_train, X_validation)
-#decisionTreeRegressor(X_train, Y_train, X_validation)
+decisionTreeRegressor(X_train, Y_train, X_validation)
 
 
 
