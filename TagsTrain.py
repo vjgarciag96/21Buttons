@@ -5,16 +5,18 @@ class TagsTrain:
     user_id = 0
     tag_id = 0
     date = datetime(2017, 12, 5)
+    userDate = 0
     color = 0
     clicks = 0
     isIT = 0
     isSP = 0
     isGB = 0
 
-    def __init__(self, user_id, tag_id, date, color, clicks):
+    def __init__(self, user_id, tag_id, date, userDate, color, clicks):
         self.user_id = user_id
         self.tag_id = tag_id
         self.date = date
+        self.userDate = userDate
         self.color = color
         self.clicks = clicks
 

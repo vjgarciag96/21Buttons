@@ -5,6 +5,7 @@ from sklearn import gaussian_process
 from sklearn import model_selection
 from sklearn import naive_bayes
 from sklearn import neural_network
+from sklearn import tree
 from sklearn.pipeline import Pipeline
 from sklearn.neighbors import KNeighborsClassifier
 from datetime import datetime
@@ -25,6 +26,32 @@ def parseUsers():
         users[user_row[0]] = user
     print "...users parsed..."
     return users
+
+def decisionTree(X_train, Y_train, X_validation):
+    decisionTree = tree.DecisionTreeClassifier(random_state=0)
+    decisionTree.fit(X_train, Y_train)
+    predictions = decisionTree.predict(X_validation)
+
+    decisionTreeOutputFile = open('decisionTreeOutput.txt', 'w')
+    decisionTreeOutputFile.write('tag_id, click_count' + '\n')
+    index = 0
+
+    for prediction in predictions:
+        decisionTreeOutputFile.write(str(tags[index].tag_id) + ', ' +  str(prediction) + '\n')
+        index += 1
+
+def decisionTreeRegressor(X_train, Y_train, X_validation):
+    decisionTree = tree.DecisionTreeRegressor(random_state=0)
+    decisionTree.fit(X_train, Y_train)
+    predictions = decisionTree.predict(X_validation)
+
+    decisionTreeOutputFile = open('decisionTreeRegressorOutput.txt', 'w')
+    decisionTreeOutputFile.write('tag_id, click_count' + '\n')
+    index = 0
+
+    for prediction in predictions:
+        decisionTreeOutputFile.write(str(tags[index].tag_id) + ', ' +  str(prediction) + '\n')
+        index += 1
 
 def bernouilliRBM(X_train, Y_train, X_validation):
 
@@ -143,7 +170,7 @@ def bayesianARDRegression(X_train, Y_train, X_validation):
         bayesianARDRegressionOutputFile.write(str(tags[index].tag_id) + ', ' +  str(prediction) + '\n')
         index += 1
 
-def linearRegression(X_train, Y_train, X_validation, Y_validation):
+def linearRegression(X_train, Y_train, X_validation):
 
     lmlinearRegression = linear_model.LinearRegression()
     lmlinearRegression.fit(X_train, Y_train)
@@ -185,6 +212,16 @@ def kNeighbors(X_train, Y_train, X_validation):
         index += 1
 #--------------End of linear models----------------------------#
 
+def datetimeToNumber(datetime):
+    month2day = [31,28,31,30,31,30,31,31,30,31,30]
+    total_days = datetime.year * 365 + (datetime.year / 4)
+    total_days_in_months = 0
+    if datetime.month > 1:
+        for x in range(0, datetime.month-1):
+            total_days_in_months += month2day[x]
+            total_days += total_days_in_months
+    return total_days + datetime.day
+
 reload(sys)
 sys.setdefaultencoding('UTF8')
 
@@ -201,11 +238,14 @@ tags_reader = csv.reader(tags_file, delimiter=';', quotechar='"')
 tags = []
 
 for tag_row in tags_reader:
-    tag = TagsTrain(tag_row[3], tag_row[0], tag_row[4], tag_row[5], tag_row[6])
+    country = users[tag_row[3]]["country"]
+    userDate = users[tag_row[3]]["date"]
+    datetimeFormated = datetime.strptime(userDate, '%Y-%m-%d')
+    dateNumber = datetimeToNumber(datetimeFormated)
 
-    if(users[tag_row[3]] != None):
-        country = users[tag_row[3]]["country"]
-        tag.setCountries(countries[country])
+    tag = TagsTrain(tag_row[3], tag_row[0], tag_row[4], dateNumber,tag_row[5], tag_row[6])
+
+    tag.setCountries(countries[country])
 
     tags.append(tag)
 
@@ -213,9 +253,9 @@ X = []
 Y = []
 
 for tag in tags:
-    datetime = datetime.strptime(tag.date, '%Y-%m-%d')
-    dateNumber = int(10000 * datetime.year + 100 * datetime.month + datetime.day)
-    vectorColumn = [dateNumber, int(tag.color), tag.isIT, tag.isSP, tag.isGB]
+    datetime_formated = datetime.strptime(tag.date, '%Y-%m-%d')
+    dateNumber = datetimeToNumber(datetime_formated)
+    vectorColumn = [dateNumber, int(tag.color), tag.isIT, tag.isSP, tag.isGB, tag.userDate]
     X.append(vectorColumn)
     Y.append(tag.clicks)
 
@@ -232,18 +272,20 @@ tags = []
 
 
 for tag_row in tags_reader:
-    tag = TagsTrain(tag_row[0], tag_row[1], tag_row[4], tag_row[5], 0)
+    country = users[tag_row[0]]["country"]
+    userDate = users[tag_row[0]]["date"]
+    datetimeFormated = datetime.strptime(userDate, '%Y-%m-%d')
+    dateNumber = datetimeToNumber(datetimeFormated)
 
-    if (users[tag_row[0]] != None):
-        country = users[tag_row[0]]["country"]
-        tag.setCountries(countries[country])
+    tag = TagsTrain(tag_row[0], tag_row[1], tag_row[4], dateNumber, tag_row[5], 0)
+    tag.setCountries(countries[country])
 
     tags.append(tag)
 
 for tag in tags:
-    datetime = datetime.strptime(tag.date, '%Y-%m-%d')
-    dateNumber = int(10000 * datetime.year + 100 * datetime.month + datetime.day)
-    vectorColumn = [dateNumber, int(tag.color), tag.isIT, tag.isSP, tag.isGB]
+    datetime_formated = datetime.strptime(tag.date, '%Y-%m-%d')
+    dateNumber = datetimeToNumber(datetime_formated)
+    vectorColumn = [dateNumber, int(tag.color), tag.isIT, tag.isSP, tag.isGB, tag.userDate]
     X_validation.append(vectorColumn)
 
 #passiveAggressiveClassifier(X_train, Y_train, X_validation)
@@ -252,8 +294,9 @@ for tag in tags:
 #bayesianRidgeRegression(X_train, Y_train, X_validation)
 #ortogonalMP(X_train, Y_train, X_validation)
 #gaussianProcessClassifier(X_train, Y_train, X_validation)
-#gaussianNB(X_train, Y_train, X_validation)
-bernouilliRBM(X_train, Y_train, X_validation)
+gaussianNB(X_train, Y_train, X_validation)
+#bernouilliRBM(X_train, Y_train, X_validation)
+#decisionTreeRegressor(X_train, Y_train, X_validation)
 
 
 
