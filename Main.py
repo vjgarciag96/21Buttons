@@ -181,6 +181,8 @@ def linearRegression(X_train, Y_train, X_validation):
     index = 0
 
     for prediction in predictions:
+        if(int(prediction) < 0):
+            prediction = 0
         lmlinearRegressionOutputFile.write(str(tags[index].tag_id) + ', ' +  str(int(prediction)) + '\n')
         index += 1
 
@@ -237,15 +239,55 @@ def parseProducts():
     print "...products parsed..."
     return products
 
+def createUserClicksDict(tagsTrain):
+    userClicksDict = dict()
+
+    for tag in tagsTrain:
+        userId = tag.user_id
+        if userId not in userClicksDict:
+            userClicksDict[userId] = []
+        userClicksDict[userId].append(int(tag.clicks))
+    return userClicksDict
+
+def userClicksMean(userClicksDict, users):
+
+    userClicksMeanDict = dict()
+
+    for key, clicks in userClicksDict.items():
+        mean = reduce(lambda x, y: x + y, clicks) / len(clicks)
+        userClicksMeanDict[key] = int(mean)
+
+    for key, user in users.items():
+        if key not in userClicksMeanDict:
+            userClicksMeanDict[key] = 0
+
+    print userClicksMeanDict
+
+    return userClicksMeanDict
+
+def getBrandMeanClicks(brandsClickFrequency, products):
+    brandClicksMeanDict = dict()
+
+    for key, clicks in userClicksDict.items():
+        mean = reduce(lambda x, y: x + y, clicks) / len(clicks)
+        userClicksMeanDict[key] = int(mean)
+
+    for key, user in users.items():
+        if key not in userClicksMeanDict:
+            userClicksMeanDict[key] = 0
+
+    print userClicksMeanDict
+
+    return userClicksMeanDict
+
+
 def getBrandTotalClicks(brandsClickFrequency, products):
 
     brandTotalClicks = dict()
 
     for key, values in brandsClickFrequency.items():
         total = 0
-        print values
         for value in values:
-            print value
             total += value
 
         brandTotalClicks[key] = total
@@ -318,6 +360,29 @@ def getProductsMeanClicks(tags, products):
 
     return meanClicks
 
+def getUserMeanClicks(tags, products):
+
+    productClicks = dict()
+    meanClicks = dict()
+
+    for tag in tags:
+        if tag.product_id not in productClicks:
+            productClicks[tag.product_id] = []
+        productClicks[tag.product_id].append(int(tag.clicks))
+
+    for key, values in productClicks.items():
+        total = 0
+        for value in values:
+            total += value
+        mean = total / len(values)
+        meanClicks[key] = mean
+
+    for key, product in products.items():
+        if product["brand"] not in meanClicks:
+            meanClicks[product["brand"]] = 0
+
+    return meanClicks
+
 def shortBrandClassification(products):
     brands_times = dict()
     for tag_key, tag_value in products.items():
@@ -338,12 +403,8 @@ def createARFFHeader(arffFile):
     arffFile.write("@ATTRIBUTE spanish NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE britain NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE userdate NUMERIC" + "\n")
-    arffFile.write("@ATTRIBUTE brandclicksmean NUMERIC" + "\n")
-    arffFile.write("@ATTRIBUTE brandclicksmedian NUMERIC" + "\n")
-    arffFile.write("@ATTRIBUTE brandclicktotal NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE productclickmean NUMERIC" + "\n")
-    arffFile.write("@ATTRIBUTE productclickmedian NUMERIC" + "\n")
-    arffFile.write("@ATTRIBUTE productclicktotal NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE userclickmean NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE clicks NUMERIC" + "\n")
 
 def createARFFData(arffFile, X, Y):
@@ -439,26 +500,24 @@ for key, product in products.items():
     if product["brand"] not in brand2mean:
         brand2mean[product["brand"]] = 0
 
-productsTotalClicks = getProductsMeanClicks(tagsTrain, products)
+productsTotalClicks = getProductsTotalClicks(tagsTrain, products)
 productsMedianClicks = getProductsMedianClicks(tagsTrain, products)
 productsMeanClicks = getProductsMeanClicks(tagsTrain, products)
 brandTotalClicks = getBrandTotalClicks(brandsClickFrequency, products)
+
+userClicksDictionary = createUserClicksDict(tagsTrain)
+userClicksMeanDictionary = userClicksMean(userClicksDictionary, users)
 
 for tag in tagsTrain:
     datetime_formated = datetime.strptime(tag.date, '%Y-%m-%d')
     dateNumber = datetimeToNumber(datetime_formated)
     vectorColumn = [dateNumber, tag.isColor0, tag.isColor1, tag.isColor2, tag.isColor3, tag.isColor4, tag.isColor5,
-                    tag.isIT, tag.isSP, tag.isGB, tag.userDate, brandTotalClicks[productsToBrands[tag.product_id]],
-                    brand2median[productsToBrands[tag.product_id]], brand2mean[productsToBrands[tag.product_id]],
-                    productsTotalClicks[tag.product_id], productsMedianClicks[tag.product_id],
-                    productsMeanClicks[tag.product_id]]
+                    tag.isIT, tag.isSP, tag.isGB, tag.userDate,
+                    productsMeanClicks[tag.product_id], userClicksMeanDictionary[tag.user_id]]
     X.append(vectorColumn)
     Y.append(tag.clicks)
 
-createARFFFile(X, Y)
-
-
-print X[0]
+#createARFFFile(X, Y)
 
 validation_size = 0
 seed = 7
@@ -483,27 +542,29 @@ for tag_row in tags_reader:
 
     tags.append(tag)
 
-print brand2median
-
 for tag in tags:
     datetime_formated = datetime.strptime(tag.date, '%Y-%m-%d')
     dateNumber = datetimeToNumber(datetime_formated)
-    vectorColumn = [dateNumber, tag.isColor0, tag.isColor1, tag.isColor2, tag.isColor3, tag.isColor4, tag.isColor5,
-                    tag.isIT, tag.isSP, tag.isGB, tag.userDate,brandTotalClicks[productsToBrands[tag.product_id]],
-                    brand2median[productsToBrands[tag.product_id]], brand2mean[productsToBrands[tag.product_id]],
-                    productsTotalClicks[tag.product_id], productsMedianClicks[tag.product_id],
-                    productsMeanClicks[tag.product_id]]
+    if tag.product_id in productsMeanClicks:
+        vectorColumn = [dateNumber, tag.isColor0, tag.isColor1, tag.isColor2, tag.isColor3, tag.isColor4, tag.isColor5,
+                    tag.isIT, tag.isSP, tag.isGB, tag.userDate,
+                    productsMeanClicks[tag.product_id], userClicksMeanDictionary[tag.user_id]]
+    else:
+        vectorColumn = [dateNumber, tag.isColor0, tag.isColor1, tag.isColor2, tag.isColor3, tag.isColor4, tag.isColor5,
+                    tag.isIT, tag.isSP, tag.isGB, tag.userDate,
+                    0, userClicksMeanDictionary[tag.user_id]]
     X_validation.append(vectorColumn)
 
 #passiveAggressiveClassifier(X_train, Y_train, X_validation)
-#linearRegression(X_train, Y_train, X_validation)
+linearRegression(X_train, Y_train, X_validation)
 #bayesianARDRegression(X_train, Y_train, X_validation)
 #bayesianRidgeRegression(X_train, Y_train, X_validation)
-ortogonalMP(X_train, Y_train, X_validation)
+#ortogonalMP(X_train, Y_train, X_validation)
 #gaussianProcessClassifier(X_train, Y_train, X_validation)
-#gaussianNB(X_train, Y_train, X_validation)
+gaussianNB(X_train, Y_train, X_validation)
 #bernouilliRBM(X_train, Y_train, X_validation)
-#decisionTreeRegressor(X_train, Y_train, X_validation)
+decisionTreeRegressor(X_train, Y_train, X_validation)
+#logisticRegression(X_train, Y_train, X_validation)
 
 
 
