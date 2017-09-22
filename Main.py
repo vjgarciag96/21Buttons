@@ -242,10 +242,11 @@ def getBrandTotalClicks(brandsClickFrequency, products):
     brandTotalClicks = dict()
 
     for key, value in brandsClickFrequency.items():
-        if key not in brandTotalClicks:
-            brandTotalClicks[key] = value
-        else:
-            brandTotalClicks[key] += value
+        total = 0
+        for value in values:
+            total += value
+
+        brandTotalClicks[key] = total
 
     for key, product in products.items():
         if product["brand"] not in brandTotalClicks:
@@ -341,6 +342,7 @@ def createARFFHeader(arffFile):
     arffFile.write("@ATTRIBUTE productclickmean NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE productclickmedian NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE productclicktotal NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE clicks NUMERIC" + "\n")
 
 def createARFFData(arffFile, X, Y):
     index = 0
@@ -351,7 +353,6 @@ def createARFFData(arffFile, X, Y):
 
         arffFile.write(str(Y[index]) + "\n")
         index += 1
-        print index
 
 def createARFFFile(X, Y):
     print "creating ARFF File"
@@ -432,6 +433,10 @@ for key, product in products.items():
     if product["brand"] not in brand2median:
         brand2median[product["brand"]] = 0
 
+for key, product in products.items():
+    if product["brand"] not in brand2mean:
+        brand2mean[product["brand"]] = 0
+
 productsTotalClicks = getProductsMeanClicks(tagsTrain, products)
 productsMedianClicks = getProductsMedianClicks(tagsTrain, products)
 productsMeanClicks = getProductsMeanClicks(tagsTrain, products)
@@ -443,8 +448,8 @@ for tag in tagsTrain:
     vectorColumn = [dateNumber, tag.isColor0, tag.isColor1, tag.isColor2, tag.isColor3, tag.isColor4, tag.isColor5,
                     tag.isIT, tag.isSP, tag.isGB, tag.userDate, brandTotalClicks[productsToBrands[tag.product_id]],
                     brand2median[productsToBrands[tag.product_id]], brand2mean[productsToBrands[tag.product_id]],
-                    productsTotalClicks[productsToBrands[tag.product_id]], productsMedianClicks[productsToBrands[tag.product_id]],
-                    productsMeanClicks[productsToBrands[tag.product_id]]]
+                    productsTotalClicks[tag.product_id], productsMedianClicks[tag.product_id],
+                    productsMeanClicks[tag.product_id]]
     X.append(vectorColumn)
     Y.append(tag.clicks)
 
@@ -482,10 +487,10 @@ for tag in tags:
     datetime_formated = datetime.strptime(tag.date, '%Y-%m-%d')
     dateNumber = datetimeToNumber(datetime_formated)
     vectorColumn = [dateNumber, tag.isColor0, tag.isColor1, tag.isColor2, tag.isColor3, tag.isColor4, tag.isColor5,
-                    tag.isIT, tag.isSP, tag.isGB, tag.userDate, getBrandTotalClicks(brandsClickFrequency),
+                    tag.isIT, tag.isSP, tag.isGB, tag.userDate,brandTotalClicks[productsToBrands[tag.product_id]],
                     brand2median[productsToBrands[tag.product_id]], brand2mean[productsToBrands[tag.product_id]],
-                    getProductsTotalClicks(tagsTrain), getProductsMedianClicks(tagsTrain),
-                    getProductsMeanClicks(tagsTrain)]
+                    productsTotalClicks[tag.product_id], productsMedianClicks[tag.product_id],
+                    productsMeanClicks[tag.product_id]]
     X_validation.append(vectorColumn)
 
 #passiveAggressiveClassifier(X_train, Y_train, X_validation)
