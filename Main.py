@@ -241,9 +241,11 @@ def getBrandTotalClicks(brandsClickFrequency, products):
 
     brandTotalClicks = dict()
 
-    for key, value in brandsClickFrequency.items():
+    for key, values in brandsClickFrequency.items():
         total = 0
+        print values
         for value in values:
+            print value
             total += value
 
         brandTotalClicks[key] = total
