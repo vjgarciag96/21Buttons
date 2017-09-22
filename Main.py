@@ -222,8 +222,151 @@ def datetimeToNumber(datetime):
             total_days += total_days_in_months
     return total_days + datetime.day
 
+def parseProducts():
+    products = dict()
+    products_file = open("products.csv", "r")
+    products_file.readline()
+    products_reader = csv.reader(products_file, delimiter=';', quotechar='"')
+    for product_row in products_reader:
+        product = dict()
+        product["id"] = product_row[0]
+        product["info"] = product_row[1]
+        product["description"] = product_row[2]
+        product["brand"] = str(product_row[3]).replace('\'', '´').replace("\n", "").upper().strip()
+        products[product_row[0]] = product
+    print "...products parsed..."
+    return products
+
+def getBrandTotalClicks(brandsClickFrequency, products):
+
+    brandTotalClicks = dict()
+
+    for key, value in brandsClickFrequency.items():
+        if key not in brandTotalClicks:
+            brandTotalClicks[key] = value
+        else:
+            brandTotalClicks[key] += value
+
+    for key, product in products.items():
+        if product["brand"] not in brandTotalClicks:
+            brandTotalClicks[product["brand"]] = 0
+
+    return brandTotalClicks
+
+
+def getProductsTotalClicks(tags, products):
+    productClicks = dict()
+    for tag in tags:
+        if tag.product_id not in productClicks:
+            productClicks[tag.product_id] = tag.clicks
+        else:
+            productClicks[tag.product_id] += tag.clicks
+
+    for key, product in products.items():
+        if product["brand"] not in productClicks:
+            productClicks[product["brand"]] = 0
+
+    return productClicks
+
+def getProductsMedianClicks(tags, products):
+
+    productClicks = dict()
+    medianClicks = dict()
+
+    for tag in tags:
+        if tag.product_id not in productClicks:
+            productClicks[tag.product_id] = []
+        productClicks[tag.product_id].append(int(tag.clicks))
+
+    for key, value in productClicks.items():
+        orderedClicks = sorted(value)
+        if len(orderedClicks) % 2 == 0:
+            median = int((orderedClicks[int(len(orderedClicks) / 2 - 1)] + orderedClicks[int(len(orderedClicks) / 2)]) / 2)
+        else:
+            median = orderedClicks[int(len(orderedClicks) / 2 - 1)]
+        medianClicks[key] = median
+
+    for key, product in products.items():
+        if product["brand"] not in medianClicks:
+            medianClicks[product["brand"]] = 0
+
+    return medianClicks
+
+def getProductsMeanClicks(tags, products):
+
+    productClicks = dict()
+    meanClicks = dict()
+
+    for tag in tags:
+        if tag.product_id not in productClicks:
+            productClicks[tag.product_id] = []
+        productClicks[tag.product_id].append(int(tag.clicks))
+
+    for key, values in productClicks.items():
+        total = 0
+        for value in values:
+            total += value
+        mean = total / len(values)
+        meanClicks[key] = mean
+
+    for key, product in products.items():
+        if product["brand"] not in meanClicks:
+            meanClicks[product["brand"]] = 0
+
+    return meanClicks
+
+def shortBrandClassification(products):
+    brands_times = dict()
+    for tag_key, tag_value in products.items():
+            brands_times[tag_value["id"]] = tag_value["brand"]
+    return brands_times
+
+def createARFFHeader(arffFile):
+    arffFile.write("@RELATION 21buttons" + "\n")
+    arffFile.write("\n\n")
+    arffFile.write("@ATTRIBUTE datenumber NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE color0 NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE color1 NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE color2 NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE color3 NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE color4 NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE color5 NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE italian NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE spanish NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE britain NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE userdate NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE brandclicksmean NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE brandclicksmedian NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE brandclicktotal NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE productclickmean NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE productclickmedian NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE productclicktotal NUMERIC" + "\n")
+
+def createARFFData(arffFile, X, Y):
+    index = 0
+
+    for item in X:
+        for value in item:
+            arffFile.write(str(value) + ", ")
+
+        arffFile.write(str(Y[index]) + "\n")
+        index += 1
+        print index
+
+def createARFFFile(X, Y):
+    print "creating ARFF File"
+    arffFile = open('wekaInput.arff', 'w')
+    createARFFHeader(arffFile)
+    arffFile.write("@DATA" + "\n")
+    createARFFData(arffFile, X, Y)
+    print "ARFF created"
+
+
+
+
 reload(sys)
 sys.setdefaultencoding('UTF8')
+
 
 users = parseUsers()
 
@@ -235,7 +378,7 @@ countries["GB"] = 2
 tags_file = open("tags_train.csv", "r")
 tags_file.readline()
 tags_reader = csv.reader(tags_file, delimiter=';', quotechar='"')
-tags = []
+tagsTrain = []
 
 for tag_row in tags_reader:
     country = users[tag_row[3]]["country"]
@@ -243,22 +386,72 @@ for tag_row in tags_reader:
     datetimeFormated = datetime.strptime(userDate, '%Y-%m-%d')
     dateNumber = datetimeToNumber(datetimeFormated)
 
-    tag = TagsTrain(tag_row[3], tag_row[0], tag_row[4], dateNumber,tag_row[5], tag_row[6])
+    tag = TagsTrain(tag_row[3], tag_row[0], tag_row[2], tag_row[4], dateNumber,tag_row[5], tag_row[6])
 
     tag.setCountries(countries[country])
 
-    tags.append(tag)
+    tagsTrain.append(tag)
+
+
 
 X = []
 Y = []
 
-for tag in tags:
+products = parseProducts()
+productsToBrands =  shortBrandClassification(products)
+
+brandsClickFrequency = dict()
+
+for tag in tagsTrain:
+    productId = tag.product_id
+    brand = productsToBrands[productId]
+    if brand not in brandsClickFrequency:
+        brandsClickFrequency[brand] = []
+    brandsClickFrequency[brand].append(int(tag.clicks))
+
+brand2median = dict()
+
+for key, value in brandsClickFrequency.items():
+    orderedClicks = sorted(value)
+    if len(orderedClicks) % 2 == 0:
+        median = int((orderedClicks[int(len(orderedClicks)/2 - 1)] + orderedClicks[int(len(orderedClicks)/2)])/2)
+    else:
+        median = orderedClicks[int(len(orderedClicks)/2 - 1)]
+    brand2median[key] = median
+
+brand2mean = dict()
+
+for key, values in brandsClickFrequency.items():
+    total = 0
+    for value in values:
+        total += value
+    mean = total/len(values)
+    brand2mean[key] = mean
+
+for key, product in products.items():
+    if product["brand"] not in brand2median:
+        brand2median[product["brand"]] = 0
+
+productsTotalClicks = getProductsMeanClicks(tagsTrain, products)
+productsMedianClicks = getProductsMedianClicks(tagsTrain, products)
+productsMeanClicks = getProductsMeanClicks(tagsTrain, products)
+brandTotalClicks = getBrandTotalClicks(brandsClickFrequency, products)
+
+for tag in tagsTrain:
     datetime_formated = datetime.strptime(tag.date, '%Y-%m-%d')
     dateNumber = datetimeToNumber(datetime_formated)
     vectorColumn = [dateNumber, tag.isColor0, tag.isColor1, tag.isColor2, tag.isColor3, tag.isColor4, tag.isColor5,
-                    tag.isIT, tag.isSP, tag.isGB, tag.userDate]
+                    tag.isIT, tag.isSP, tag.isGB, tag.userDate, brandTotalClicks[productsToBrands[tag.product_id]],
+                    brand2median[productsToBrands[tag.product_id]], brand2mean[productsToBrands[tag.product_id]],
+                    productsTotalClicks[productsToBrands[tag.product_id]], productsMedianClicks[productsToBrands[tag.product_id]],
+                    productsMeanClicks[productsToBrands[tag.product_id]]]
     X.append(vectorColumn)
     Y.append(tag.clicks)
+
+createARFFFile(X, Y)
+
+
+print X[0]
 
 validation_size = 0
 seed = 7
@@ -278,27 +471,32 @@ for tag_row in tags_reader:
     datetimeFormated = datetime.strptime(userDate, '%Y-%m-%d')
     dateNumber = datetimeToNumber(datetimeFormated)
 
-    tag = TagsTrain(tag_row[0], tag_row[1], tag_row[4], dateNumber, tag_row[5], 0)
+    tag = TagsTrain(tag_row[0], tag_row[1], tag_row[3], tag_row[4], dateNumber, tag_row[5], 0)
     tag.setCountries(countries[country])
 
     tags.append(tag)
+
+print brand2median
 
 for tag in tags:
     datetime_formated = datetime.strptime(tag.date, '%Y-%m-%d')
     dateNumber = datetimeToNumber(datetime_formated)
     vectorColumn = [dateNumber, tag.isColor0, tag.isColor1, tag.isColor2, tag.isColor3, tag.isColor4, tag.isColor5,
-                    tag.isIT, tag.isSP, tag.isGB, tag.userDate]
+                    tag.isIT, tag.isSP, tag.isGB, tag.userDate, getBrandTotalClicks(brandsClickFrequency),
+                    brand2median[productsToBrands[tag.product_id]], brand2mean[productsToBrands[tag.product_id]],
+                    getProductsTotalClicks(tagsTrain), getProductsMedianClicks(tagsTrain),
+                    getProductsMeanClicks(tagsTrain)]
     X_validation.append(vectorColumn)
 
 #passiveAggressiveClassifier(X_train, Y_train, X_validation)
 #linearRegression(X_train, Y_train, X_validation)
 #bayesianARDRegression(X_train, Y_train, X_validation)
 #bayesianRidgeRegression(X_train, Y_train, X_validation)
-#ortogonalMP(X_train, Y_train, X_validation)
+ortogonalMP(X_train, Y_train, X_validation)
 #gaussianProcessClassifier(X_train, Y_train, X_validation)
 #gaussianNB(X_train, Y_train, X_validation)
 #bernouilliRBM(X_train, Y_train, X_validation)
-decisionTreeRegressor(X_train, Y_train, X_validation)
+#decisionTreeRegressor(X_train, Y_train, X_validation)
 
 
 
