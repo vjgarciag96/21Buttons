@@ -323,6 +323,34 @@ def brandClicksMean(brandsClickFrequency, products):
 
     return brandClicksDictionary
 
+def productInfoClicksMean(productsClickFrequency, products):
+
+    productInfoClicksDictionary = dict()
+
+    for productId, productClicks in productsClickFrequency.items():
+        clicksMean = reduce(lambda x,y: x+y, productClicks) / len(productClicks)
+        productInfoClicksDictionary[productId] = int(clicksMean)
+
+    for key, product in products.items():
+        if product["brand"] not in productInfoClicksDictionary:
+            productInfoClicksDictionary[product["info"]] = 0
+
+    return productInfoClicksDictionary
+
+def productClicksMean(productsClickFrequency, products):
+
+    productClicksDictionary = dict()
+
+    for productId, productClicks in productsClickFrequency.items():
+        clicksMean = reduce(lambda x,y: x+y, productClicks) / len(productClicks)
+        productClicksDictionary[productId] = int(clicksMean)
+
+    for key, product in products.items():
+        if product["brand"] not in productClicksDictionary:
+            productClicksDictionary[product["brand"]] = 0
+
+    return productClicksDictionary
+
 '''def getBrandMeanClicks(brandsClickFrequency, products):
     brandClicksMeanDict = dict()
 
@@ -475,6 +503,7 @@ def createARFFHeader(arffFile):
     arffFile.write("@ATTRIBUTE userclickmean NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE brandclickmean NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE countryclickmean NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE infoclickmean NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE months NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE clicks NUMERIC" + "\n")
 
@@ -537,12 +566,16 @@ productsToBrands =  shortBrandClassification(products)
 productsToInfo = shortInfoClassification(products)
 
 brandsClickFrequency = dict()
+productClickFrequency = dict()
 
 for tag in tagsTrain:
     productId = tag.product_id
     brand = productsToBrands[productId]
+    info = productsToInfo[productId]
     if brand not in brandsClickFrequency:
         brandsClickFrequency[brand] = []
+    if info not in productClickFrequency:
+        productClickFrequency[info] = []
     brandsClickFrequency[brand].append(int(tag.clicks))
 
 brand2median = dict()
@@ -570,7 +603,7 @@ colorClicksMeanDictionary = colorClicksMean(colorClicksDictionary)
 countryClicksDictionary = createCountryClicksDict(tagsTrain)
 countryClicksMeanDictionary = countryClicksMean(countryClicksDictionary)
 
-
+productClicksMeanDictionary = productClicksMean(productClickFrequency)
 brandClicksMeanDictionary = brandClicksMean(brandsClickFrequency, products)
 
 for tag in tagsTrain:
@@ -580,6 +613,7 @@ for tag in tagsTrain:
                     userClicksMeanDictionary[tag.user_id],
                     brandClicksMeanDictionary[productsToBrands[tag.product_id]],
                     countryClicksMeanDictionary[tag.country],
+                    productClicksMeanDictionary[productsToInfo[tag.product_id]],
                     month]
     X.append(vectorColumn)
     Y.append(tag.clicks)
@@ -619,12 +653,14 @@ for tag in tags:
                         userClicksMeanDictionary[tag.user_id],
                         brandClicksMeanDictionary[productsToBrands[tag.product_id]],
                         countryClicksMeanDictionary[tag.country],
+                        productClicksMeanDictionary[productsToInfo[tag.product_id]],
                         month]
     else:
         vectorColumn = [0,
                         userClicksMeanDictionary[tag.user_id],
                         brandClicksMeanDictionary[productsToBrands[tag.product_id]],
                         countryClicksMeanDictionary[tag.country],
+                        productClicksMeanDictionary[productsToInfo[tag.product_id]],
                         month]
     X_validation.append(vectorColumn)
 
