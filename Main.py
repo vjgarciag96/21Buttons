@@ -577,6 +577,7 @@ for tag in tagsTrain:
     if info not in productClickFrequency:
         productClickFrequency[info] = []
     brandsClickFrequency[brand].append(int(tag.clicks))
+    productClickFrequency[info].append(int(tag.clicks))
 
 brand2median = dict()
 
