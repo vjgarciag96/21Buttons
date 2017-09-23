@@ -346,8 +346,8 @@ def productClicksMean(productsClickFrequency, products):
         productClicksDictionary[productId] = int(clicksMean)
 
     for key, product in products.items():
-        if product["brand"] not in productClicksDictionary:
-            productClicksDictionary[product["brand"]] = 0
+        if product["info"] not in productClicksDictionary:
+            productClicksDictionary[product["info"]] = 0
 
     return productClicksDictionary
 
