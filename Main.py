@@ -274,6 +274,7 @@ def createColorClicksDict(tagsTrain):
         if colorId not in colorClicksDict:
             colorClicksDict[colorId] = []
         colorClicksDict[colorId].append(int(tag.clicks))
+
     return colorClicksDict
 
 def colorClicksMean(colorClicksDict):
@@ -287,6 +288,19 @@ def colorClicksMean(colorClicksDict):
 
     return colorClicksMeanDictionary
 
+def brandClicksMean(brandsClickFrequency, products):
+
+    brandClicksDictionary = dict()
+
+    for brandId, brandClicks in brandsClickFrequency.items():
+        clicksMean = reduce(lambda x,y: x+y, brandClicks) / len(brandClicks)
+        brandClicksDictionary[brandId] = int(clicksMean)
+
+    for key, product in products.items():
+        if product["brand"] not in brandClicksDictionary:
+            brandClicksDictionary[product["brand"]] = 0
+
+    return brandClicksDictionary
 
 '''def getBrandMeanClicks(brandsClickFrequency, products):
     brandClicksMeanDict = dict()
@@ -412,20 +426,26 @@ def shortBrandClassification(products):
 
 def createARFFHeader(arffFile):
     arffFile.write("@RELATION 21buttons" + "\n")
-    arffFile.write("\n\n")
-    arffFile.write("@ATTRIBUTE datenumber NUMERIC" + "\n")
+    arffFile.write("\n")
+
+    #arffFile.write("@ATTRIBUTE datenumber NUMERIC" + "\n")
+
+
+    '''arffFile.write("@ATTRIBUTE italian NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE spanish NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE britain NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE userdate NUMERIC" + "\n")'''
+
+    arffFile.write("@ATTRIBUTE productclickmean NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE userclickmean NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE color0 NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE color1 NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE color2 NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE color3 NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE color4 NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE color5 NUMERIC" + "\n")
-    arffFile.write("@ATTRIBUTE italian NUMERIC" + "\n")
-    arffFile.write("@ATTRIBUTE spanish NUMERIC" + "\n")
-    arffFile.write("@ATTRIBUTE britain NUMERIC" + "\n")
-    arffFile.write("@ATTRIBUTE userdate NUMERIC" + "\n")
-    arffFile.write("@ATTRIBUTE productclickmean NUMERIC" + "\n")
-    arffFile.write("@ATTRIBUTE userclickmean NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE colorclickmean NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE brandclickmean NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE clicks NUMERIC" + "\n")
 
 def createARFFData(arffFile, X, Y):
@@ -504,23 +524,6 @@ for key, value in brandsClickFrequency.items():
         median = orderedClicks[int(len(orderedClicks)/2 - 1)]
     brand2median[key] = median
 
-brand2mean = dict()
-
-for key, values in brandsClickFrequency.items():
-    total = 0
-    for value in values:
-        total += value
-    mean = total/len(values)
-    brand2mean[key] = mean
-
-for key, product in products.items():
-    if product["brand"] not in brand2median:
-        brand2median[product["brand"]] = 0
-
-for key, product in products.items():
-    if product["brand"] not in brand2mean:
-        brand2mean[product["brand"]] = 0
-
 productsTotalClicks = getProductsTotalClicks(tagsTrain, products)
 productsMedianClicks = getProductsMedianClicks(tagsTrain, products)
 productsMeanClicks = getProductsMeanClicks(tagsTrain, products)
@@ -533,12 +536,19 @@ userClicksMeanDictionary = userClicksMean(userClicksDictionary, users)
 colorClicksDictionary = createColorClicksDict(tagsTrain)
 colorClicksMeanDictionary = colorClicksMean(colorClicksDictionary)
 
+brandClicksMeanDictionary = brandClicksMean(brandsClickFrequency, products)
+print brandClicksMeanDictionary
+
 for tag in tagsTrain:
     datetime_formated = datetime.strptime(tag.date, '%Y-%m-%d')
     dateNumber = datetimeToNumber(datetime_formated)
     vectorColumn = [productsMeanClicks[tag.product_id],
                     userClicksMeanDictionary[tag.user_id],
-                    colorClicksMeanDictionary[tag.color]]
+                    tag.isColor0, tag.isColor1,
+                    tag.isColor2, tag.isColor3,
+                    tag.isColor4, tag.isColor5,
+                    colorClicksMeanDictionary[tag.color],
+                    brandClicksMeanDictionary[productsToBrands[tag.product_id]]]
     X.append(vectorColumn)
     Y.append(tag.clicks)
 
@@ -573,11 +583,19 @@ for tag in tags:
     if tag.product_id in productsMeanClicks:
         vectorColumn = [productsMeanClicks[tag.product_id],
                         userClicksMeanDictionary[tag.user_id],
-                        colorClicksMeanDictionary[tag.color]]
+                        tag.isColor0, tag.isColor1,
+                        tag.isColor2, tag.isColor3,
+                        tag.isColor4, tag.isColor5,
+                        colorClicksMeanDictionary[tag.color],
+                        brandClicksMeanDictionary[productsToBrands[tag.product_id]]]
     else:
         vectorColumn = [0,
                         userClicksMeanDictionary[tag.user_id],
-                        colorClicksMeanDictionary[tag.color]]
+                        tag.isColor0, tag.isColor1,
+                        tag.isColor2, tag.isColor3,
+                        tag.isColor4, tag.isColor5,
+                        colorClicksMeanDictionary[tag.color],
+                        brandClicksMeanDictionary[productsToBrands[tag.product_id]]]
     X_validation.append(vectorColumn)
 
 #passiveAggressiveClassifier(X_train, Y_train, X_validation)
