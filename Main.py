@@ -354,9 +354,6 @@ def getProductsMeanClicks(tags, products):
         mean = total / len(values)
         meanClicks[key] = mean
 
-    for key, product in products.items():
-        if product["brand"] not in meanClicks:
-            meanClicks[product["brand"]] = 0
 
     return meanClicks
 
@@ -496,10 +493,6 @@ for key, product in products.items():
     if product["brand"] not in brand2median:
         brand2median[product["brand"]] = 0
 
-for key, product in products.items():
-    if product["brand"] not in brand2mean:
-        brand2mean[product["brand"]] = 0
-
 productsTotalClicks = getProductsTotalClicks(tagsTrain, products)
 productsMedianClicks = getProductsMedianClicks(tagsTrain, products)
 productsMeanClicks = getProductsMeanClicks(tagsTrain, products)
@@ -513,11 +506,12 @@ for tag in tagsTrain:
     dateNumber = datetimeToNumber(datetime_formated)
     vectorColumn = [dateNumber, tag.isColor0, tag.isColor1, tag.isColor2, tag.isColor3, tag.isColor4, tag.isColor5,
                     tag.isIT, tag.isSP, tag.isGB, tag.userDate,
-                    productsMeanClicks[tag.product_id], userClicksMeanDictionary[tag.user_id]]
+                    productsMeanClicks[tag.product_id],
+                    userClicksMeanDictionary[tag.user_id]]
     X.append(vectorColumn)
     Y.append(tag.clicks)
 
-#createARFFFile(X, Y)
+createARFFFile(X, Y)
 
 validation_size = 0
 seed = 7
@@ -548,11 +542,13 @@ for tag in tags:
     if tag.product_id in productsMeanClicks:
         vectorColumn = [dateNumber, tag.isColor0, tag.isColor1, tag.isColor2, tag.isColor3, tag.isColor4, tag.isColor5,
                     tag.isIT, tag.isSP, tag.isGB, tag.userDate,
-                    productsMeanClicks[tag.product_id], userClicksMeanDictionary[tag.user_id]]
+                    productsMeanClicks[tag.product_id],
+                        userClicksMeanDictionary[tag.user_id]]
     else:
         vectorColumn = [dateNumber, tag.isColor0, tag.isColor1, tag.isColor2, tag.isColor3, tag.isColor4, tag.isColor5,
                     tag.isIT, tag.isSP, tag.isGB, tag.userDate,
-                    0, userClicksMeanDictionary[tag.user_id]]
+                        userClicksMeanDictionary[tag.user_id],
+                        userClicksMeanDictionary[tag.user_id]]
     X_validation.append(vectorColumn)
 
 #passiveAggressiveClassifier(X_train, Y_train, X_validation)
@@ -561,9 +557,9 @@ linearRegression(X_train, Y_train, X_validation)
 #bayesianRidgeRegression(X_train, Y_train, X_validation)
 #ortogonalMP(X_train, Y_train, X_validation)
 #gaussianProcessClassifier(X_train, Y_train, X_validation)
-gaussianNB(X_train, Y_train, X_validation)
+#gaussianNB(X_train, Y_train, X_validation)
 #bernouilliRBM(X_train, Y_train, X_validation)
-decisionTreeRegressor(X_train, Y_train, X_validation)
+#decisionTreeRegressor(X_train, Y_train, X_validation)
 #logisticRegression(X_train, Y_train, X_validation)
 
 
