@@ -265,7 +265,30 @@ def userClicksMean(userClicksDict, users):
 
     return userClicksMeanDict
 
-def getBrandMeanClicks(brandsClickFrequency, products):
+
+def createColorClicksDict(tagsTrain):
+    colorClicksDict = dict()
+
+    for tag in tagsTrain:
+        colorId = tag.color
+        if colorId not in colorClicksDict:
+            colorClicksDict[colorId] = []
+        colorClicksDict[colorId].append(int(tag.clicks))
+    return colorClicksDict
+
+def colorClicksMean(colorClicksDict):
+    colorClicksMeanDictionary = dict()
+
+    for colorId, colorClicks in colorClicksDict.items():
+        clicksMean = reduce(lambda x,y: x+y, colorClicks) / len(colorClicks)
+        colorClicksMeanDictionary[colorId] = int(clicksMean)
+
+    print colorClicksMeanDictionary
+
+    return colorClicksMeanDictionary
+
+
+'''def getBrandMeanClicks(brandsClickFrequency, products):
     brandClicksMeanDict = dict()
 
     for key, clicks in userClicksDict.items():
@@ -276,9 +299,7 @@ def getBrandMeanClicks(brandsClickFrequency, products):
         if key not in userClicksMeanDict:
             userClicksMeanDict[key] = 0
 
-    print userClicksMeanDict
-
-    return userClicksMeanDict
+    return userClicksMeanDict'''
 
 
 def getBrandTotalClicks(brandsClickFrequency, products):
@@ -505,19 +526,23 @@ productsMedianClicks = getProductsMedianClicks(tagsTrain, products)
 productsMeanClicks = getProductsMeanClicks(tagsTrain, products)
 brandTotalClicks = getBrandTotalClicks(brandsClickFrequency, products)
 
+
 userClicksDictionary = createUserClicksDict(tagsTrain)
 userClicksMeanDictionary = userClicksMean(userClicksDictionary, users)
+
+colorClicksDictionary = createColorClicksDict(tagsTrain)
+colorClicksMeanDictionary = colorClicksMean(colorClicksDictionary)
 
 for tag in tagsTrain:
     datetime_formated = datetime.strptime(tag.date, '%Y-%m-%d')
     dateNumber = datetimeToNumber(datetime_formated)
-    vectorColumn = [dateNumber, tag.isColor0, tag.isColor1, tag.isColor2, tag.isColor3, tag.isColor4, tag.isColor5,
-                    tag.isIT, tag.isSP, tag.isGB, tag.userDate,
-                    productsMeanClicks[tag.product_id], userClicksMeanDictionary[tag.user_id]]
+    vectorColumn = [productsMeanClicks[tag.product_id],
+                    userClicksMeanDictionary[tag.user_id],
+                    colorClicksMeanDictionary[tag.color]]
     X.append(vectorColumn)
     Y.append(tag.clicks)
 
-#createARFFFile(X, Y)
+createARFFFile(X, Y)
 
 validation_size = 0
 seed = 7
@@ -546,13 +571,13 @@ for tag in tags:
     datetime_formated = datetime.strptime(tag.date, '%Y-%m-%d')
     dateNumber = datetimeToNumber(datetime_formated)
     if tag.product_id in productsMeanClicks:
-        vectorColumn = [dateNumber, tag.isColor0, tag.isColor1, tag.isColor2, tag.isColor3, tag.isColor4, tag.isColor5,
-                    tag.isIT, tag.isSP, tag.isGB, tag.userDate,
-                    productsMeanClicks[tag.product_id], userClicksMeanDictionary[tag.user_id]]
+        vectorColumn = [productsMeanClicks[tag.product_id],
+                        userClicksMeanDictionary[tag.user_id],
+                        colorClicksMeanDictionary[tag.color]]
     else:
-        vectorColumn = [dateNumber, tag.isColor0, tag.isColor1, tag.isColor2, tag.isColor3, tag.isColor4, tag.isColor5,
-                    tag.isIT, tag.isSP, tag.isGB, tag.userDate,
-                    0, userClicksMeanDictionary[tag.user_id]]
+        vectorColumn = [0,
+                        userClicksMeanDictionary[tag.user_id],
+                        colorClicksMeanDictionary[tag.color]]
     X_validation.append(vectorColumn)
 
 #passiveAggressiveClassifier(X_train, Y_train, X_validation)
@@ -561,9 +586,9 @@ linearRegression(X_train, Y_train, X_validation)
 #bayesianRidgeRegression(X_train, Y_train, X_validation)
 #ortogonalMP(X_train, Y_train, X_validation)
 #gaussianProcessClassifier(X_train, Y_train, X_validation)
-gaussianNB(X_train, Y_train, X_validation)
+#gaussianNB(X_train, Y_train, X_validation)
 #bernouilliRBM(X_train, Y_train, X_validation)
-decisionTreeRegressor(X_train, Y_train, X_validation)
+#decisionTreeRegressor(X_train, Y_train, X_validation)
 #logisticRegression(X_train, Y_train, X_validation)
 
 

@@ -11,6 +11,7 @@ class TagsTrain:
     isIT = 0
     isSP = 0
     isGB = 0
+    color = 0
 
     isColor0 = 0
     isColor1 = 0
@@ -25,7 +26,8 @@ class TagsTrain:
         self.product_id = product_id
         self.date = date
         self.userDate = userDate
-        self.color = self.setColor(int(color))
+        self.setColor(int(color))
+        self.color = int(color)
         self.clicks = clicks
 
     def setCountries(self, countryCode):
