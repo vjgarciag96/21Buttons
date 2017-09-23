@@ -603,7 +603,7 @@ colorClicksMeanDictionary = colorClicksMean(colorClicksDictionary)
 countryClicksDictionary = createCountryClicksDict(tagsTrain)
 countryClicksMeanDictionary = countryClicksMean(countryClicksDictionary)
 
-productClicksMeanDictionary = productClicksMean(productClickFrequency)
+productClicksMeanDictionary = productClicksMean(productClickFrequency, products)
 brandClicksMeanDictionary = brandClicksMean(brandsClickFrequency, products)
 
 for tag in tagsTrain:
