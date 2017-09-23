@@ -8,6 +8,7 @@ class TagsTrain:
     date = datetime(2017, 12, 5)
     userDate = 0
     clicks = 0
+    country = 0
     isIT = 0
     isSP = 0
     isGB = 0
@@ -31,6 +32,7 @@ class TagsTrain:
         self.clicks = clicks
 
     def setCountries(self, countryCode):
+        self.country = countryCode
         if countryCode == 0:
             self.isIT = 1
         else:

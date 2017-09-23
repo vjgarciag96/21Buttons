@@ -224,6 +224,9 @@ def datetimeToNumber(datetime):
             total_days += total_days_in_months
     return total_days + datetime.day
 
+def dateTimeToMonth(datetime):
+    return int(datetime.month)
+
 def parseProducts():
     products = dict()
     products_file = open("products.csv", "r")
@@ -232,7 +235,7 @@ def parseProducts():
     for product_row in products_reader:
         product = dict()
         product["id"] = product_row[0]
-        product["info"] = product_row[1]
+        product["info"] = str(product_row[1]).replace('\'', '´').replace("\n", "").upper().strip()
         product["description"] = product_row[2]
         product["brand"] = str(product_row[3]).replace('\'', '´').replace("\n", "").upper().strip()
         products[product_row[0]] = product
@@ -261,8 +264,6 @@ def userClicksMean(userClicksDict, users):
         if key not in userClicksMeanDict:
             userClicksMeanDict[key] = 0
 
-    print userClicksMeanDict
-
     return userClicksMeanDict
 
 
@@ -284,9 +285,29 @@ def colorClicksMean(colorClicksDict):
         clicksMean = reduce(lambda x,y: x+y, colorClicks) / len(colorClicks)
         colorClicksMeanDictionary[colorId] = int(clicksMean)
 
-    print colorClicksMeanDictionary
-
     return colorClicksMeanDictionary
+
+def createCountryClicksDict(tagsTrain):
+    countryClicksDict = dict()
+
+    for tag in tagsTrain:
+        countryId = tag.country
+        if countryId not in countryClicksDict:
+            countryClicksDict[countryId] = []
+        countryClicksDict[countryId].append(int(tag.clicks))
+
+    return countryClicksDict
+
+def countryClicksMean(countryClicksDict):
+    countryClicksMeanDictionary = dict()
+
+    for countryId, countryClicks in countryClicksDict.items():
+        clicksMean = reduce(lambda x, y: x + y, countryClicks) / len(countryClicks)
+        countryClicksMeanDictionary[countryId] = int(clicksMean)
+    print "---CountryClicksMean---"
+    print countryClicksMeanDictionary
+
+    return countryClicksMeanDictionary
 
 def brandClicksMean(brandsClickFrequency, products):
 
@@ -424,6 +445,12 @@ def shortBrandClassification(products):
             brands_times[tag_value["id"]] = tag_value["brand"]
     return brands_times
 
+def shortInfoClassification(products):
+    info_times = dict()
+    for tag_key, tag_value in products.items():
+            info_times[tag_value["id"]] = tag_value["info"]
+    return info_times
+
 def createARFFHeader(arffFile):
     arffFile.write("@RELATION 21buttons" + "\n")
     arffFile.write("\n")
@@ -434,18 +461,21 @@ def createARFFHeader(arffFile):
     '''arffFile.write("@ATTRIBUTE italian NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE spanish NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE britain NUMERIC" + "\n")
-    arffFile.write("@ATTRIBUTE userdate NUMERIC" + "\n")'''
+    arffFile.write("@ATTRIBUTE userdate NUMERIC" + "\n")
 
-    arffFile.write("@ATTRIBUTE productclickmean NUMERIC" + "\n")
-    arffFile.write("@ATTRIBUTE userclickmean NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE color0 NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE color1 NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE color2 NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE color3 NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE color4 NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE color5 NUMERIC" + "\n")
-    arffFile.write("@ATTRIBUTE colorclickmean NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE colorclickmean NUMERIC" + "\n")'''
+
+    arffFile.write("@ATTRIBUTE productclickmean NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE userclickmean NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE brandclickmean NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE countryclickmean NUMERIC" + "\n")
+    arffFile.write("@ATTRIBUTE months NUMERIC" + "\n")
     arffFile.write("@ATTRIBUTE clicks NUMERIC" + "\n")
 
 def createARFFData(arffFile, X, Y):
@@ -504,6 +534,7 @@ Y = []
 
 products = parseProducts()
 productsToBrands =  shortBrandClassification(products)
+productsToInfo = shortInfoClassification(products)
 
 brandsClickFrequency = dict()
 
@@ -536,19 +567,20 @@ userClicksMeanDictionary = userClicksMean(userClicksDictionary, users)
 colorClicksDictionary = createColorClicksDict(tagsTrain)
 colorClicksMeanDictionary = colorClicksMean(colorClicksDictionary)
 
+countryClicksDictionary = createCountryClicksDict(tagsTrain)
+countryClicksMeanDictionary = countryClicksMean(countryClicksDictionary)
+
+
 brandClicksMeanDictionary = brandClicksMean(brandsClickFrequency, products)
-print brandClicksMeanDictionary
 
 for tag in tagsTrain:
     datetime_formated = datetime.strptime(tag.date, '%Y-%m-%d')
-    dateNumber = datetimeToNumber(datetime_formated)
+    month = dateTimeToMonth(datetime_formated)
     vectorColumn = [productsMeanClicks[tag.product_id],
                     userClicksMeanDictionary[tag.user_id],
-                    tag.isColor0, tag.isColor1,
-                    tag.isColor2, tag.isColor3,
-                    tag.isColor4, tag.isColor5,
-                    colorClicksMeanDictionary[tag.color],
-                    brandClicksMeanDictionary[productsToBrands[tag.product_id]]]
+                    brandClicksMeanDictionary[productsToBrands[tag.product_id]],
+                    countryClicksMeanDictionary[tag.country],
+                    month]
     X.append(vectorColumn)
     Y.append(tag.clicks)
 
@@ -580,22 +612,20 @@ for tag_row in tags_reader:
 for tag in tags:
     datetime_formated = datetime.strptime(tag.date, '%Y-%m-%d')
     dateNumber = datetimeToNumber(datetime_formated)
+    month = dateTimeToMonth(datetime_formated)
+
     if tag.product_id in productsMeanClicks:
         vectorColumn = [productsMeanClicks[tag.product_id],
                         userClicksMeanDictionary[tag.user_id],
-                        tag.isColor0, tag.isColor1,
-                        tag.isColor2, tag.isColor3,
-                        tag.isColor4, tag.isColor5,
-                        colorClicksMeanDictionary[tag.color],
-                        brandClicksMeanDictionary[productsToBrands[tag.product_id]]]
+                        brandClicksMeanDictionary[productsToBrands[tag.product_id]],
+                        countryClicksMeanDictionary[tag.country],
+                        month]
     else:
         vectorColumn = [0,
                         userClicksMeanDictionary[tag.user_id],
-                        tag.isColor0, tag.isColor1,
-                        tag.isColor2, tag.isColor3,
-                        tag.isColor4, tag.isColor5,
-                        colorClicksMeanDictionary[tag.color],
-                        brandClicksMeanDictionary[productsToBrands[tag.product_id]]]
+                        brandClicksMeanDictionary[productsToBrands[tag.product_id]],
+                        countryClicksMeanDictionary[tag.country],
+                        month]
     X_validation.append(vectorColumn)
 
 #passiveAggressiveClassifier(X_train, Y_train, X_validation)
